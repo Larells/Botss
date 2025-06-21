@@ -8,3 +8,5 @@ services:
     envVars:
       - key: BOT_TOKEN
         fromSecret: BOT_TOKEN
+      - key: OPENAI_API_KEY
+        fromSecret: OPENAI_API_KEY
