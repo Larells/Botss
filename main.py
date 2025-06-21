@@ -1,9 +1,7 @@
-from fastapi import FastAPI
-app = FastAPI()
-
+from fastapi import FastAPI, Request
 import os
 import openai
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, Bot
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -11,38 +9,33 @@ from telegram.ext import (
     ContextTypes,
     filters
 )
-from fastapi import FastAPI, Request
-from telegram.ext import Dispatcher
-from telegram import Bot
-import asyncio
 
 # Инициализация FastAPI
 app = FastAPI()
 
-# Загружаем ключи
+# Загружаем переменные
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Например: https://название.onrender.com/webhook
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # https://your-render-app.onrender.com/webhook
 
+# Настройка OpenAI
 openai.api_key = OPENAI_KEY
 
-# Telegram Bot
-bot = Bot(token=BOT_TOKEN)
+# Создание бота
 application = ApplicationBuilder().token(BOT_TOKEN).build()
-dp: Dispatcher = application
+bot = application.bot
 
-# Память
+# Память для диалога
 user_contexts = {}
 
-# Клавиатура
+# Главное меню
 main_keyboard = ReplyKeyboardMarkup([
     ["📜 История", "😂 Анекдот"],
     ["🎮 Игры", "🧠 Кто я?"],
     ["🧩 Факт", "💌 Подписка"]
 ], resize_keyboard=True)
 
-
-# Обработчики
+# Обработчик /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_contexts[user.id] = []
@@ -51,7 +44,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=main_keyboard
     )
 
-
+# Обработка обычных сообщений
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     text = update.message.text
@@ -79,13 +72,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_contexts[user.id].append({"role": "assistant", "content": reply})
     await update.message.reply_text(reply)
 
-
-# Регистрируем обработчики
+# Регистрация хендлеров
 application.add_handler(CommandHandler("start", start))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-
-# FastAPI endpoint для Telegram webhook
+# Endpoint FastAPI для Telegram webhook
 @app.post("/webhook")
 async def telegram_webhook(request: Request):
     data = await request.json()
@@ -93,8 +84,7 @@ async def telegram_webhook(request: Request):
     await application.update_queue.put(update)
     return {"ok": True}
 
-
-# Запуск webhook при старте
+# Установка webhook при старте
 @app.on_event("startup")
 async def startup():
     await bot.delete_webhook()
