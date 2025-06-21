@@ -44,7 +44,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             temperature=0.8
         )
         reply = response.choices[0].message["content"]
-    except Exception as e:
+except Exception as e:
     print("Ошибка OpenAI:", e)
     reply = "Интеллект сейчас не работает. Причина в консоли."
 
