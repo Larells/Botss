@@ -45,7 +45,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         reply = response.choices[0].message["content"]
     except Exception as e:
-        reply = "Что-то пошло не так с интеллектом 😓"
+    print("Ошибка OpenAI:", e)
+    reply = "Интеллект сейчас не работает. Причина в консоли."
 
     user_contexts[user.id].append({"role": "assistant", "content": reply})
     await update.message.reply_text(reply)
